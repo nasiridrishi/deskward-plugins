@@ -31,6 +31,7 @@ test('the exchange matches Deskward’s own, value for value', async () => {
 /** A Deskward on the far side of $.http.fetch, running its half of the exchange with `code`. */
 function deskward(on: On, code: string, person: 'confirms' | 'cancels', certificate = (): string => CERTIFICATES.lab) {
   const ran: string[][] = []
+  const stdins: string[] = []
   const state: { key?: Uint8Array; tokenHash?: string; finished?: boolean } = {}
   on('clock.now', () => ({ value: Date.parse('2026-10-31T10:00:00Z') }))
   on('clock.every', () => ({ value: { cancel: () => {} } }) as never)
@@ -75,10 +76,13 @@ function deskward(on: On, code: string, person: 'confirms' | 'cancels', certific
   })
   on('process.run', (_, e) => {
     ran.push([...e.argv])
+    if (e.init?.stdin !== undefined) stdins.push(e.init.stdin)
     const out = (stdout: string) => ({ value: { exitCode: 0, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } })
     switch (e.argv[0]) {
       case 'uname':
         return out('Darwin\n')
+      case '/bin/sh':
+        return out(e.argv[2]?.startsWith('printf') ? '/Users/office' : '')
       case 'scutil':
         return out('Office Mac\n')
       case 'mktemp':
@@ -90,7 +94,7 @@ function deskward(on: On, code: string, person: 'confirms' | 'cancels', certific
         return out('')
     }
   })
-  return { ran, state }
+  return { ran, state, stdins }
 }
 
 function connect($: { command: { run: (input: never) => Promise<{ text?: string }> } }, args: string) {
@@ -98,15 +102,20 @@ function connect($: { command: { run: (input: never) => Promise<{ text?: string 
 }
 
 test('the code alone pairs: the certificate it vouched for is trusted and the server added with a token never sent', async ($, on) => {
-  const { ran, state } = deskward(on, CODE, 'confirms')
+  const { ran, state, stdins } = deskward(on, CODE, 'confirms')
   await $.session.start({ cwd: '/work', surface: 'desktop', isInteractive: true })
   const result = await connect($, `connect Lab ${CODE}`)
   expect(result.text).toContain('Connected')
   expect(ran).toContainEqual(['security', 'add-trusted-cert', '-r', 'trustRoot', '-p', 'ssl', '/tmp/deskward.x1/deskward-ca.cer'])
-  const add = ran.find(argv => argv[0] === 'claude' && argv[2] === 'add')!
-  expect(add.slice(0, 9)).toEqual(['claude', 'mcp', 'add', '-s', 'local', '-t', 'http', 'deskward', 'https://lab.local:47391/mcp'])
-  const token = add[10]!.replace('Authorization: Bearer ', '')
+  const add = ran.find(argv => argv[0] === 'claude' && argv[2] === 'add-json')!
+  expect(add.slice(0, 6)).toEqual(['claude', 'mcp', 'add-json', '-s', 'local', 'deskward'])
+  const helper = '/Users/office/.deskward/headers/lab.local'
+  expect(JSON.parse(add[6]!)).toEqual({ type: 'http', url: 'https://lab.local:47391/mcp', headersHelper: helper })
+  const wrote = ran.find(argv => argv[0] === '/bin/sh' && argv.includes(helper))!
+  expect(wrote[2]).toContain('umask 077')
+  const token = stdins.join('').match(/Bearer ([0-9a-f]{64})/)![1]!
   expect(hex(await sha256(utf8(token)))).toBe(state.tokenHash)
+  expect(ran.flat().some(arg => arg.includes(token)), 'the token is on no command line').toBe(false)
 })
 
 test('a wrong code, or a Confirm not pressed, trusts nothing and adds nothing', async ($, on) => {

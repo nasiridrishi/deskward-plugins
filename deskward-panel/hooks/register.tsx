@@ -408,10 +408,25 @@ async function connect($: EngineInterface, name: string, given?: string): Promis
     await $.process.run(['rmdir', folder]).catch(() => undefined)
   }
 
+  // The token never goes on a command line, where anyone signed in to this computer could read
+  // it: a helper only this account can read prints the header, and Claude Code runs it.
+  const home = (await $.process.run(['/bin/sh', '-c', 'printf %s "$HOME"'])).stdout
+  const helpers = `${home}/.deskward/headers`
+  const helper = `${helpers}/${host}`
+  const script = `#!/bin/sh\nprintf '%s\\n' '{"Authorization":"Bearer ${token}"}'\n`
+  const wrote = await $.process.run(
+    ['/bin/sh', '-c', 'umask 077 && mkdir -p "$1" && cat > "$2" && chmod 700 "$2"', 'sh', helpers, helper],
+    { stdin: script },
+  )
+  if (!home || wrote.exitCode !== 0) {
+    return `${host} is paired and trusted, but its key could not be saved: ${wrote.stderr.trim() || 'no home folder'}`
+  }
   const url = `https://${host}:${DIRECT_PORT}/mcp`
   const cwd = await $.session.cwd()
   const add = () =>
-    $.process.run(['claude', 'mcp', 'add', '-s', 'local', '-t', 'http', SERVER, url, '-H', `Authorization: Bearer ${token}`], { cwd })
+    $.process.run(['claude', 'mcp', 'add-json', '-s', 'local', SERVER, JSON.stringify({ type: 'http', url, headersHelper: helper })], {
+      cwd,
+    })
   let added = await add().catch(() => undefined)
   if (added && added.exitCode !== 0 && /already exists/i.test(added.stdout + added.stderr)) {
     const replace = await $.ui.ask(`This project already has an MCP server named ${SERVER}. Replace it with Deskward on ${host}?`, {
