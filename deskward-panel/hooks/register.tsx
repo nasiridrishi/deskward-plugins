@@ -327,7 +327,7 @@ async function connect($: EngineInterface, name: string, given?: string): Promis
   const typed =
     given ??
     (await $.ui
-      .ask(`On ${host}, open Deskward's menu, choose Other computers, then Pair. Type the code it shows.`, {
+      .ask(`On ${host}, open Deskward's menu, choose Paired computers, then Pair. Type the code it shows.`, {
         options: ['Cancel', 'Not now'],
         header: 'Pairing code',
       })
