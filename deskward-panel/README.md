@@ -25,7 +25,7 @@ outline. The terminal shows the words only.
 
 `/deskward connect <computer>` adds a computer's Deskward to the project, with nothing of
 Deskward's installed here; a bare name gets `.local`. On that computer, choose **Other
-computers...** in Deskward's menu and press **Pair a computer**; type the code it shows when asked
+computers...** in Deskward's menu and press **Pair**; type the code it shows when asked
 (or give it after the name), then press **Confirm** there. macOS then asks for the account
 password once, to trust that Deskward's certificate.
 

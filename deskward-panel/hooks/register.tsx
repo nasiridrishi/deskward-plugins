@@ -327,7 +327,7 @@ async function connect($: EngineInterface, name: string, given?: string): Promis
   const typed =
     given ??
     (await $.ui
-      .ask(`On ${host}, open Deskward's menu, choose Other computers, then Pair a computer. Type the code it shows.`, {
+      .ask(`On ${host}, open Deskward's menu, choose Other computers, then Pair. Type the code it shows.`, {
         options: ['Cancel', 'Not now'],
         header: 'Pairing code',
       })
@@ -354,10 +354,10 @@ async function connect($: EngineInterface, name: string, given?: string): Promis
   const der = pemToDer(pem)
   const derHash = await sha256(der)
   if (hex(await mac(key, [utf8('target'), derHash])) !== started.body.confirm) {
-    return `The code did not match: it was mistyped, or something other than Deskward answered for ${host}. Nothing was trusted; press Pair a computer there for a new code.`
+    return `The code did not match: it was mistyped, or something other than Deskward answered for ${host}. Nothing was trusted; press Pair there for a new code.`
   }
   if (!constrainedAuthority(der)) {
-    return `${host} sent a certificate authority that is not limited to .local names and closed to addresses, which Deskward never makes. Nothing was trusted; press Pair a computer there to cancel.`
+    return `${host} sent a certificate authority that is not limited to .local names and closed to addresses, which Deskward never makes. Nothing was trusted; press Pair there to cancel.`
   }
 
   const token = hex(crypto.getRandomValues(new Uint8Array(32)))
