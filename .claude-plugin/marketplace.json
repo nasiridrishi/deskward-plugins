@@ -1,0 +1,14 @@
+{
+  "name": "deskward",
+  "owner": {
+    "name": "Nasir Idrishi"
+  },
+  "description": "Claude Code plugins for working with Deskward targets",
+  "plugins": [
+    {
+      "name": "deskward-panel",
+      "source": "./deskward-panel",
+      "description": "A pane beside the Claude Code chat with the project's Deskward target: session, approval time, the person's activity and recent actions"
+    }
+  ]
+}
