@@ -1,6 +1,5 @@
 {
   "name": "deskward-panel",
-  "version": "0.2.0",
   "description": "A pane beside the chat with the project's Deskward target: session, approval time, the person's activity and recent actions",
   "types": "./types/index.d.ts"
 }

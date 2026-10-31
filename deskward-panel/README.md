@@ -53,3 +53,12 @@ In Claude Code:
 
 or from a shell, `claude plugin marketplace add nasiridrishi/deskward-plugins` and
 `claude plugin install deskward-panel@deskward`. Deskward's pairing card shows the same commands.
+
+To get updates as they are published, open `/plugin`, choose **Marketplaces**, then `deskward`,
+then **Enable auto-update**. Claude Code then checks at startup. It updates a marketplace it does
+not ship only once you turn this on, and nothing in the marketplace can turn it on for you.
+Without it, update by hand with `/plugin marketplace update deskward` and
+`/plugin update deskward-panel@deskward`, then `/reload-plugins`.
+
+The plugin has no version number of its own, so every commit to this repository counts as an
+update.
