@@ -139,11 +139,14 @@ test('the agent’s screenshots are replayed with what it did between them', asy
       preview: { block: 2, image_size: [480, 270] },
     }
     const text = JSON.stringify(reply)
+    const saved = (name: string) => (shots === 2 ? [{ type: 'text', text: `[Image: source: /tmp/${name}]` }] : [])
     return {
       result: [
         { type: 'text', text },
         { type: 'image', data: 'FULL', mimeType: 'image/png' },
+        ...saved('full.png'),
         { type: 'image', data: `SMALL${shots}`, mimeType: 'image/jpeg' },
+        ...saved('small.jpg'),
       ],
       text,
     }

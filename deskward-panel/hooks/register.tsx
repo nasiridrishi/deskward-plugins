@@ -448,7 +448,6 @@ function blocksOf(result: unknown): Record<string, any>[] {
   return Array.isArray(content) ? content : []
 }
 
-/** Keeps one of the agent's screenshots for the pane: Deskward's small copy and what it marked. */
 /** Whole numbers of a sane size, exactly `count` of them, or undefined. */
 function ints<N extends number>(value: unknown, count: N): (number[] & { length: N }) | undefined {
   if (!Array.isArray(value) || value.length !== count) return undefined
@@ -480,11 +479,15 @@ function marksOf(drawn: unknown): Mark[] {
   })
 }
 
+/** Keeps one of the agent's screenshots for the pane: Deskward's small copy and what it marked. */
 async function keep($: EngineInterface, id: string, at: number, ran: { text?: string; result?: unknown }) {
   const reply = json(ran.text)
   const region = ints(reply?.region, 4)
   if (!reply || !region || region[2]! <= 0 || region[3]! <= 0) return
-  const block = Number.isInteger(reply.preview?.block) ? blocksOf(ran.result)[reply.preview.block] : undefined
+  // Deskward numbers its blocks with its reply text first, but Claude Code follows each image it
+  // keeps with a line naming the saved file, so the small copy is found among the images alone.
+  const images = blocksOf(ran.result).filter(b => b?.type === 'image')
+  const block = Number.isInteger(reply.preview?.block) ? images[reply.preview.block - 1] : undefined
   const raw = block?.data ?? block?.source?.data
   // Base64 alone, so nothing but the picture reaches the markup.
   const data = typeof raw === 'string' && /^[A-Za-z0-9+/]+={0,2}$/.test(raw) ? raw : undefined
